@@ -4,7 +4,9 @@
 
 ## 功能
 
-- 选择简洁模板，编辑文字、符号、形状和配色
+- 选择简洁模板，编辑文字、Lucide 开源图标、形状和配色
+- 为字母选择 Plus Jakarta Sans、Space Grotesk、IBM Plex Sans 或 IBM Plex Mono
+- 在上下、左右、对角、角落和居中五种排版之间切换
 - 用一句描述生成一个可继续编辑的 AI 草案
 - 查看 16、32、48、128 像素预览
 - 下载 Chrome 图标包或 Favicon 图标包

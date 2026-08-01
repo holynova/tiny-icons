@@ -1,20 +1,112 @@
 "use client";
 
 import { CSSProperties, useMemo, useState } from "react";
+import {
+  BadgeCheck,
+  Bot,
+  Brackets,
+  CircleDashed,
+  Code,
+  Command,
+  Layers2,
+  MousePointer2,
+  Notebook,
+  Orbit,
+  Palette,
+  Rocket,
+  ScanLine,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  WandSparkles,
+  Workflow,
+  Zap,
+  type IconNode,
+} from "lucide";
+import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/ibm-plex-sans";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/600.css";
 
 type Shape = "circle" | "rounded" | "square";
 type Mode = "templates" | "ai";
 type ExportTarget = "chrome" | "favicon";
+type Layout = "stack" | "corner" | "diagonal" | "inline" | "center";
+type FontKey = "plus" | "space" | "plex" | "mono";
+
+const iconLibrary = {
+  Sparkles,
+  Bot,
+  Code,
+  Brackets,
+  Palette,
+  Terminal,
+  Rocket,
+  ShieldCheck,
+  MousePointer2,
+  Notebook,
+  Orbit,
+  Zap,
+  Layers2,
+  Workflow,
+  ScanLine,
+  CircleDashed,
+  Command,
+  BadgeCheck,
+  WandSparkles,
+} satisfies Record<string, IconNode>;
+
+type IconName = keyof typeof iconLibrary;
+
+const iconLabels: Record<IconName, string> = {
+  Sparkles: "闪光",
+  Bot: "助手",
+  Code: "代码",
+  Brackets: "括号",
+  Palette: "色板",
+  Terminal: "终端",
+  Rocket: "发布",
+  ShieldCheck: "安全",
+  MousePointer2: "交互",
+  Notebook: "笔记",
+  Orbit: "轨道",
+  Zap: "速度",
+  Layers2: "图层",
+  Workflow: "流程",
+  ScanLine: "扫描",
+  CircleDashed: "聚焦",
+  Command: "命令",
+  BadgeCheck: "确认",
+  WandSparkles: "魔法",
+};
+
+const iconNames = Object.keys(iconLibrary) as IconName[];
+const layoutOptions: Array<{ id: Layout; label: string }> = [
+  { id: "stack", label: "上下" },
+  { id: "corner", label: "左上 / 右下" },
+  { id: "diagonal", label: "右上 / 左下" },
+  { id: "inline", label: "左右" },
+  { id: "center", label: "居中" },
+];
+const fontOptions: Array<{ id: FontKey; label: string; sample: string }> = [
+  { id: "plus", label: "Plus Jakarta", sample: "Aa" },
+  { id: "space", label: "Space Grotesk", sample: "Aa" },
+  { id: "plex", label: "IBM Plex Sans", sample: "Aa" },
+  { id: "mono", label: "IBM Plex Mono", sample: "01" },
+];
 
 type Template = {
   id: string;
   name: string;
   detail: string;
   letter: string;
-  symbol: string;
+  iconName: IconName;
   background: string;
   foreground: string;
   shape: Shape;
+  layout: Layout;
+  fontKey: FontKey;
   className: string;
 };
 
@@ -22,12 +114,14 @@ const templates: Template[] = [
   {
     id: "orbit",
     name: "Orbit",
-    detail: "symbol + letter",
+    detail: "icon + letter",
     letter: "N",
-    symbol: "✦",
+    iconName: "Orbit",
     background: "#e6a55c",
     foreground: "#163f3a",
     shape: "circle",
+    layout: "corner",
+    fontKey: "space",
     className: "template-orbit",
   },
   {
@@ -35,21 +129,25 @@ const templates: Template[] = [
     name: "Bracket",
     detail: "developer mark",
     letter: "AI",
-    symbol: "<> ",
+    iconName: "Brackets",
     background: "#31547c",
     foreground: "#f5ead9",
     shape: "rounded",
+    layout: "inline",
+    fontKey: "mono",
     className: "template-bracket",
   },
   {
     id: "signal",
     name: "Signal",
-    detail: "single glyph",
+    detail: "icon + letter",
     letter: "S",
-    symbol: "⌁",
+    iconName: "ScanLine",
     background: "#d25e45",
     foreground: "#f6e8d6",
     shape: "square",
+    layout: "diagonal",
+    fontKey: "plus",
     className: "template-signal",
   },
   {
@@ -57,15 +155,16 @@ const templates: Template[] = [
     name: "Kernel",
     detail: "quiet monogram",
     letter: "K",
-    symbol: "·",
+    iconName: "CircleDashed",
     background: "#e8dfce",
     foreground: "#183e3b",
     shape: "circle",
+    layout: "center",
+    fontKey: "plex",
     className: "template-kernel",
   },
 ];
 
-const symbolOptions = ["✦", "<> ", "⌁", "◒", "＋", "·"];
 const colorOptions = [
   { background: "#e6a55c", foreground: "#163f3a", label: "Amber" },
   { background: "#31547c", foreground: "#f5ead9", label: "Harbor" },
@@ -77,19 +176,51 @@ const previewSizes = [16, 32, 48, 128] as const;
 
 type IconState = {
   letter: string;
-  symbol: string;
+  iconName: IconName;
   background: string;
   foreground: string;
   shape: Shape;
+  layout: Layout;
+  fontKey: FontKey;
 };
 
 const initialIcon: IconState = {
   letter: templates[0].letter,
-  symbol: templates[0].symbol,
+  iconName: templates[0].iconName,
   background: templates[0].background,
   foreground: templates[0].foreground,
   shape: templates[0].shape,
+  layout: templates[0].layout,
+  fontKey: templates[0].fontKey,
 };
+
+const fontFamilyFor = (fontKey: FontKey) => ({
+  plus: "Plus Jakarta Sans, sans-serif",
+  space: "Space Grotesk, sans-serif",
+  plex: "IBM Plex Sans, sans-serif",
+  mono: "IBM Plex Mono, monospace",
+}[fontKey]);
+
+function toReactAttrs(attrs: Record<string, string | number | undefined>) {
+  return Object.fromEntries(
+    Object.entries(attrs).map(([key, value]) => [
+      key.replace(/-([a-z])/g, (_, character: string) => character.toUpperCase()),
+      value,
+    ]),
+  );
+}
+
+function IconGlyph({ name }: { name: IconName }) {
+  const node = iconLibrary[name];
+  return (
+    <svg className="lucide-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {node.map(([tag, attrs], index) => {
+        const Element = tag as keyof JSX.IntrinsicElements;
+        return <Element key={`${tag}-${index}`} {...toReactAttrs(attrs)} />;
+      })}
+    </svg>
+  );
+}
 
 function IconArtwork({
   icon,
@@ -101,15 +232,16 @@ function IconArtwork({
   const style = {
     "--icon-background": icon.background,
     "--icon-foreground": icon.foreground,
+    "--icon-font": fontFamilyFor(icon.fontKey),
   } as CSSProperties;
 
   return (
     <div
-      className={`icon-artwork icon-${size} shape-${icon.shape}`}
+      className={`icon-artwork icon-${size} shape-${icon.shape} layout-${icon.layout}`}
       style={style}
       aria-label={`${icon.letter} icon`}
     >
-      <span className="artwork-symbol">{icon.symbol.trim()}</span>
+      <span className="artwork-icon"><IconGlyph name={icon.iconName} /></span>
       <span className="artwork-letter">{icon.letter}</span>
       <span className="artwork-dot" />
     </div>
@@ -128,12 +260,33 @@ function escapeXml(value: string) {
 function iconSvg(icon: IconState) {
   const radius = icon.shape === "circle" ? 64 : icon.shape === "rounded" ? 28 : 15;
   const letterSize = icon.letter.length > 1 ? 31 : 46;
+  const layout = {
+    stack: { iconX: 64, iconY: 35, iconSize: 28, letterX: 64, letterY: 93, anchor: "middle" },
+    corner: { iconX: 30, iconY: 30, iconSize: 28, letterX: 98, letterY: 100, anchor: "end" },
+    diagonal: { iconX: 98, iconY: 30, iconSize: 28, letterX: 30, letterY: 100, anchor: "start" },
+    inline: { iconX: 34, iconY: 64, iconSize: 28, letterX: 91, letterY: 72, anchor: "middle" },
+    center: { iconX: 64, iconY: 42, iconSize: 34, letterX: 64, letterY: 96, anchor: "middle" },
+  }[icon.layout];
+  const iconMarkup = iconNodeSvg(icon.iconName, layout.iconX, layout.iconY, layout.iconSize, icon.foreground);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="${radius}" fill="${icon.background}"/>
-  <text x="64" y="46" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="${icon.foreground}">${escapeXml(icon.symbol.trim())}</text>
-  <text x="64" y="78" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${letterSize}" font-weight="800" letter-spacing="-2" fill="${icon.foreground}">${escapeXml(icon.letter)}</text>
-  <circle cx="94" cy="94" r="4" fill="${icon.foreground}"/>
+  ${iconMarkup}
+  <text x="${layout.letterX}" y="${layout.letterY}" text-anchor="${layout.anchor}" dominant-baseline="middle" font-family="${escapeXml(fontFamilyFor(icon.fontKey))}" font-size="${letterSize}" font-weight="700" letter-spacing="-2" fill="${icon.foreground}">${escapeXml(icon.letter)}</text>
+  <circle cx="${icon.layout === "diagonal" ? 94 : 28}" cy="${icon.layout === "corner" ? 28 : 103}" r="3" fill="${icon.foreground}"/>
 </svg>`;
+}
+
+function iconNodeSvg(name: IconName, centerX: number, centerY: number, size: number, color: string) {
+  const scale = size / 24;
+  const node = iconLibrary[name];
+  const content = node.map(([tag, attrs]) => {
+    const attributes = Object.entries(attrs)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => `${key}="${escapeXml(String(value))}"`)
+      .join(" ");
+    return `<${tag} ${attributes}/>`;
+  }).join("");
+  return `<g transform="translate(${centerX - size / 2} ${centerY - size / 2}) scale(${scale})" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${content}</g>`;
 }
 
 async function renderPng(icon: IconState, size: number) {
@@ -143,22 +296,15 @@ async function renderPng(icon: IconState, size: number) {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is unavailable");
 
-  const radius = icon.shape === "circle" ? size / 2 : icon.shape === "rounded" ? size * 0.22 : size * 0.12;
+  const image = new Image();
+  const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconSvg(icon))}`;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("SVG render failed"));
+    image.src = svgUrl;
+  });
   context.clearRect(0, 0, size, size);
-  context.fillStyle = icon.background;
-  context.beginPath();
-  context.roundRect(0, 0, size, size, radius);
-  context.fill();
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.fillStyle = icon.foreground;
-  context.font = `700 ${Math.max(6, Math.round(size * 0.18))}px Arial, sans-serif`;
-  context.fillText(icon.symbol.trim(), size / 2, size * 0.34);
-  context.font = `800 ${Math.max(8, Math.round(size * (icon.letter.length > 1 ? 0.24 : 0.36)))}px Arial, sans-serif`;
-  context.fillText(icon.letter, size / 2, size * 0.61);
-  context.beginPath();
-  context.arc(size * 0.73, size * 0.73, Math.max(1, size * 0.03), 0, Math.PI * 2);
-  context.fill();
+  context.drawImage(image, 0, 0, size, size);
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((result) => (result ? resolve(result) : reject(new Error("PNG export failed"))), "image/png");
@@ -306,10 +452,12 @@ export default function Home() {
     setSelectedTemplate(template.id);
     setIcon({
       letter: template.letter,
-      symbol: template.symbol,
+      iconName: template.iconName,
       background: template.background,
       foreground: template.foreground,
       shape: template.shape,
+      layout: template.layout,
+      fontKey: template.fontKey,
     });
     setNotice(`${template.name} 模板已应用`);
   };
@@ -421,7 +569,7 @@ export default function Home() {
                   onClick={() => applyTemplate(template)}
                 >
                   <span className={`template-thumb ${template.className}`} style={{ "--thumb-bg": template.background, "--thumb-fg": template.foreground } as CSSProperties}>
-                    <span>{template.symbol.trim()}</span><b>{template.letter}</b>
+                    <IconGlyph name={template.iconName} /><b>{template.letter}</b>
                   </span>
                   <span className="template-info"><strong>{template.name}</strong><small>{template.detail}</small></span>
                   <span className="template-arrow">{selectedTemplate === template.id ? "●" : "＋"}</span>
@@ -481,7 +629,9 @@ export default function Home() {
             <div className="controls-header"><span>EDIT MARK</span><span>{notice}</span></div>
             <div className="controls-grid">
               <label className="control-field text-field"><span>LETTER</span><input value={icon.letter} maxLength={2} onChange={(event) => updateIcon({ letter: event.target.value.toUpperCase() })} /></label>
-              <div className="control-field"><span>SYMBOL</span><div className="symbol-options">{symbolOptions.map((symbol) => <button key={symbol} type="button" className={icon.symbol.trim() === symbol.trim() ? "selected" : ""} onClick={() => updateIcon({ symbol })}>{symbol.trim()}</button>)}</div></div>
+              <div className="control-field icon-field"><span>ICON LIBRARY</span><div className="icon-options">{iconNames.map((name) => <button key={name} type="button" className={icon.iconName === name ? "selected" : ""} onClick={() => updateIcon({ iconName: name })} aria-label={iconLabels[name]} title={iconLabels[name]}><IconGlyph name={name} /></button>)}</div></div>
+              <div className="control-field layout-field"><span>LAYOUT</span><div className="layout-options">{layoutOptions.map((option) => <button key={option.id} type="button" className={icon.layout === option.id ? "selected" : ""} onClick={() => updateIcon({ layout: option.id })} aria-label={option.label} title={option.label}><span className={`layout-sample sample-${option.id}`}><i /><b /></span></button>)}</div></div>
+              <div className="control-field font-field"><span>TYPE</span><div className="font-options">{fontOptions.map((font) => <button key={font.id} type="button" className={icon.fontKey === font.id ? "selected" : ""} onClick={() => updateIcon({ fontKey: font.id })} style={{ "--font-sample": fontFamilyFor(font.id) } as CSSProperties} aria-label={font.label} title={font.label}><span>{font.sample}</span></button>)}</div></div>
               <div className="control-field"><span>SHAPE</span><div className="shape-options">{(["circle", "rounded", "square"] as Shape[]).map((shape) => <button key={shape} className={`shape-control shape-control-${shape} ${icon.shape === shape ? "selected" : ""}`} type="button" onClick={() => updateIcon({ shape })} aria-label={shape} />)}</div></div>
               <div className="control-field"><span>PALETTE</span><div className="color-options">{colorOptions.map((color) => <button key={color.label} className={icon.background === color.background ? "selected" : ""} type="button" style={{ "--swatch-bg": color.background, "--swatch-fg": color.foreground } as CSSProperties} onClick={() => updateIcon({ background: color.background, foreground: color.foreground })} aria-label={color.label} />)}</div></div>
             </div>
