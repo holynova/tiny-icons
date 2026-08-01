@@ -543,6 +543,7 @@ export default function Home() {
         <div className="topbar-center">ICON / 001</div>
         <div className="topbar-actions">
           <span className="draft-status"><i /> 本地草稿</span>
+          <a className="repo-link" href="https://github.com/holynova/tiny-icons" target="_blank" rel="noreferrer">GitHub Repo</a>
           <button className="text-button" type="button" onClick={() => setNotice("所有修改会保留在当前设备")}>保存说明</button>
           <button className="top-export" type="button" onClick={exportPack}>导出图标包 <span>↗</span></button>
         </div>
