@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   Bot,
   Brackets,
+  ChevronDown,
   CircleDashed,
   Code,
   Command,
@@ -40,6 +41,7 @@ const iconLibrary = {
   Bot,
   Code,
   Brackets,
+  ChevronDown,
   Palette,
   Terminal,
   Rocket,
@@ -64,6 +66,7 @@ const iconLabels: Record<IconName, string> = {
   Bot: "助手",
   Code: "代码",
   Brackets: "括号",
+  ChevronDown: "下箭头",
   Palette: "色板",
   Terminal: "终端",
   Rocket: "发布",
@@ -112,65 +115,65 @@ type Template = {
 
 const templates: Template[] = [
   {
-    id: "orbit",
-    name: "Orbit",
-    detail: "icon + letter",
-    letter: "N",
-    iconName: "Orbit",
-    background: "#e6a55c",
-    foreground: "#163f3a",
-    shape: "circle",
-    layout: "corner",
-    fontKey: "space",
-    className: "template-orbit",
-  },
-  {
-    id: "bracket",
-    name: "Bracket",
-    detail: "developer mark",
-    letter: "AI",
-    iconName: "Brackets",
-    background: "#31547c",
-    foreground: "#f5ead9",
+    id: "terminal",
+    name: "Terminal",
+    detail: "deep navy glyph",
+    letter: "",
+    iconName: "Terminal",
+    background: "#071b43",
+    foreground: "#58f4d1",
     shape: "rounded",
-    layout: "inline",
-    fontKey: "mono",
-    className: "template-bracket",
-  },
-  {
-    id: "signal",
-    name: "Signal",
-    detail: "icon + letter",
-    letter: "S",
-    iconName: "ScanLine",
-    background: "#d25e45",
-    foreground: "#f6e8d6",
-    shape: "square",
-    layout: "diagonal",
-    fontKey: "plus",
-    className: "template-signal",
-  },
-  {
-    id: "kernel",
-    name: "Kernel",
-    detail: "quiet monogram",
-    letter: "K",
-    iconName: "CircleDashed",
-    background: "#e8dfce",
-    foreground: "#183e3b",
-    shape: "circle",
     layout: "center",
-    fontKey: "plex",
-    className: "template-kernel",
+    fontKey: "mono",
+    className: "template-terminal",
+  },
+  {
+    id: "magic",
+    name: "Magic",
+    detail: "spark + letter",
+    letter: "A",
+    iconName: "Sparkles",
+    background: "#e74687",
+    foreground: "#fff8fc",
+    shape: "rounded",
+    layout: "stack",
+    fontKey: "plus",
+    className: "template-magic",
+  },
+  {
+    id: "chevron",
+    name: "Chevron",
+    detail: "single clear mark",
+    letter: "",
+    iconName: "ChevronDown",
+    background: "#df5a4d",
+    foreground: "#fff9f3",
+    shape: "rounded",
+    layout: "center",
+    fontKey: "plus",
+    className: "template-chevron",
+  },
+  {
+    id: "focus",
+    name: "Focus",
+    detail: "compact badge",
+    letter: "A",
+    iconName: "BadgeCheck",
+    background: "#10274d",
+    foreground: "#9affd9",
+    shape: "square",
+    layout: "center",
+    fontKey: "mono",
+    className: "template-focus",
   },
 ];
 
 const colorOptions = [
-  { background: "#e6a55c", foreground: "#163f3a", label: "Amber" },
-  { background: "#31547c", foreground: "#f5ead9", label: "Harbor" },
-  { background: "#d25e45", foreground: "#f6e8d6", label: "Signal" },
-  { background: "#183e3b", foreground: "#f3c96a", label: "Pine" },
-  { background: "#e8dfce", foreground: "#183e3b", label: "Paper" },
+  { background: "#071b43", foreground: "#58f4d1", label: "Midnight" },
+  { background: "#e74687", foreground: "#fff8fc", label: "Rose" },
+  { background: "#df5a4d", foreground: "#fff9f3", label: "Coral" },
+  { background: "#0b4b61", foreground: "#d1ff59", label: "Aqua" },
+  { background: "#f1eee7", foreground: "#173e3a", label: "Paper" },
 ];
 const previewSizes = [16, 32, 48, 128] as const;
 
@@ -237,13 +240,12 @@ function IconArtwork({
 
   return (
     <div
-      className={`icon-artwork icon-${size} shape-${icon.shape} layout-${icon.layout}`}
+      className={`icon-artwork icon-${size} shape-${icon.shape} layout-${icon.layout} ${icon.letter ? "" : "icon-only"}`}
       style={style}
-      aria-label={`${icon.letter} icon`}
+      aria-label={`${icon.letter ? `${icon.letter} ` : ""}${icon.iconName} icon`}
     >
       <span className="artwork-icon"><IconGlyph name={icon.iconName} /></span>
       <span className="artwork-letter">{icon.letter}</span>
-      <span className="artwork-dot" />
     </div>
   );
 }
@@ -267,12 +269,17 @@ function iconSvg(icon: IconState) {
     inline: { iconX: 34, iconY: 64, iconSize: 28, letterX: 91, letterY: 72, anchor: "middle" },
     center: { iconX: 64, iconY: 42, iconSize: 34, letterX: 64, letterY: 96, anchor: "middle" },
   }[icon.layout];
-  const iconMarkup = iconNodeSvg(icon.iconName, layout.iconX, layout.iconY, layout.iconSize, icon.foreground);
+  const composition = icon.letter
+    ? layout
+    : { ...layout, iconX: 64, iconY: 64, iconSize: 46 };
+  const iconMarkup = iconNodeSvg(icon.iconName, composition.iconX, composition.iconY, composition.iconSize, icon.foreground);
+  const letterMarkup = icon.letter
+    ? `<text x="${composition.letterX}" y="${composition.letterY}" text-anchor="${composition.anchor}" dominant-baseline="middle" font-family="${escapeXml(fontFamilyFor(icon.fontKey))}" font-size="${letterSize}" font-weight="700" letter-spacing="-2" fill="${icon.foreground}">${escapeXml(icon.letter)}</text>`
+    : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <rect width="128" height="128" rx="${radius}" fill="${icon.background}"/>
   ${iconMarkup}
-  <text x="${layout.letterX}" y="${layout.letterY}" text-anchor="${layout.anchor}" dominant-baseline="middle" font-family="${escapeXml(fontFamilyFor(icon.fontKey))}" font-size="${letterSize}" font-weight="700" letter-spacing="-2" fill="${icon.foreground}">${escapeXml(icon.letter)}</text>
-  <circle cx="${icon.layout === "diagonal" ? 94 : 28}" cy="${icon.layout === "corner" ? 28 : 103}" r="3" fill="${icon.foreground}"/>
+  ${letterMarkup}
 </svg>`;
 }
 
@@ -468,7 +475,7 @@ export default function Home() {
       const lower = prompt.toLowerCase();
       const isWarm = lower.includes("暖") || lower.includes("橙") || lower.includes("温柔");
       const isBlue = lower.includes("蓝") || lower.includes("冷") || lower.includes("海");
-      const next = isBlue ? templates[1] : isWarm ? templates[2] : templates[3];
+      const next = isBlue ? templates[0] : isWarm ? templates[1] : templates[3];
       applyTemplate(next);
       setMode("templates");
       setNotice(`AI 草案已生成，基于「${prompt.slice(0, 18)}${prompt.length > 18 ? "…" : ""}」`);
