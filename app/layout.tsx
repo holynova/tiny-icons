@@ -13,7 +13,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        {children}
+        <script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="e01c9f78-4607-4e60-b01c-77c8190b12b4"
+          data-domains="holynova.github.io"
+          data-exclude-search="true"
+          data-exclude-hash="true"
+        />
+      </body>
     </html>
   );
 }
