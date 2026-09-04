@@ -6,3 +6,4 @@
 
 Repo: https://github.com/holynova/tiny-icons
 Pages: https://holynova.github.io/tiny-icons/
+Cloudflare: https://tiny-icons.xiaosang.cc/
