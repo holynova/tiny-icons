@@ -2,6 +2,11 @@
 
 小图标生成器，支持 Lucide 开源图标、模板、字体、排版和 PNG/SVG/ICO 导出。
 
+<p align="center">
+  <img src="assets/readme/hero.svg" width="100%" alt="Tiny Icons: 小图标生成器，支持 Lucide 开源图标、模板、字体、排版和 PNG/SVG/ICO 导出。">
+</p>
+
+
 ![Tiny Icons](./screenshot.png)
 
 [在线制作图标](https://holynova.github.io/tiny-icons/) · [源码](https://github.com/holynova/tiny-icons)
