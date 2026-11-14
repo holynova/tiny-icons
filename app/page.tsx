@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, useMemo, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   AlarmClock,
@@ -205,8 +205,8 @@ type Template = {
 const templates: Template[] = [
   {
     id: "terminal",
-    name: "Terminal",
-    detail: "deep navy glyph",
+    name: "终端",
+    detail: "深蓝底，薄荷绿线条",
     letter: "",
     iconName: "Terminal",
     background: "#071b43",
@@ -218,8 +218,8 @@ const templates: Template[] = [
   },
   {
     id: "magic",
-    name: "Magic",
-    detail: "spark + letter",
+    name: "闪光",
+    detail: "闪光加字母",
     letter: "A",
     iconName: "Sparkles",
     background: "#e74687",
@@ -231,8 +231,8 @@ const templates: Template[] = [
   },
   {
     id: "chevron",
-    name: "Chevron",
-    detail: "single clear mark",
+    name: "箭头",
+    detail: "一个清晰的箭头",
     letter: "",
     iconName: "ChevronDown",
     background: "#df5a4d",
@@ -244,8 +244,8 @@ const templates: Template[] = [
   },
   {
     id: "focus",
-    name: "Focus",
-    detail: "compact badge",
+    name: "徽章",
+    detail: "紧凑的徽章",
     letter: "A",
     iconName: "BadgeCheck",
     background: "#10274d",
@@ -258,28 +258,29 @@ const templates: Template[] = [
 ];
 
 const colorOptions = [
-  { background: "#071b43", foreground: "#58f4d1", label: "Midnight" },
-  { background: "#e74687", foreground: "#fff8fc", label: "Rose" },
-  { background: "#df5a4d", foreground: "#fff9f3", label: "Coral" },
-  { background: "#0b4b61", foreground: "#d1ff59", label: "Aqua" },
-  { background: "#f1eee7", foreground: "#173e3a", label: "Paper" },
-  { background: "#56459b", foreground: "#f7f2ff", label: "Iris" },
-  { background: "#f3b84b", foreground: "#173e3a", label: "Sun" },
-  { background: "#c7eadc", foreground: "#0b4b61", label: "Mint" },
-  { background: "#f0d1c1", foreground: "#6c2f3d", label: "Clay" },
-  { background: "#242a31", foreground: "#f3cf59", label: "Graphite" },
-  { background: "#2446d8", foreground: "#f7f2df", label: "Cobalt" },
-  { background: "#ed7d31", foreground: "#fff8ed", label: "Tangerine" },
-  { background: "#d8f56a", foreground: "#1e3329", label: "Lime" },
-  { background: "#ddd4ff", foreground: "#45307a", label: "Lavender" },
-  { background: "#6e315f", foreground: "#ffe0f0", label: "Plum" },
-  { background: "#d8f3f0", foreground: "#0b5960", label: "Glacier" },
-  { background: "#718355", foreground: "#fff5d6", label: "Moss" },
-  { background: "#971f3f", foreground: "#fff0f2", label: "Cherry" },
-  { background: "#2f5d8c", foreground: "#f9e8a8", label: "Denim" },
-  { background: "#f4b183", foreground: "#4a2d27", label: "Apricot" },
+  { background: "#071b43", foreground: "#58f4d1", label: "午夜" },
+  { background: "#e74687", foreground: "#fff8fc", label: "玫瑰" },
+  { background: "#df5a4d", foreground: "#fff9f3", label: "珊瑚" },
+  { background: "#0b4b61", foreground: "#d1ff59", label: "水色" },
+  { background: "#f1eee7", foreground: "#173e3a", label: "宣纸" },
+  { background: "#56459b", foreground: "#f7f2ff", label: "鸢尾" },
+  { background: "#f3b84b", foreground: "#173e3a", label: "暖阳" },
+  { background: "#c7eadc", foreground: "#0b4b61", label: "薄荷" },
+  { background: "#f0d1c1", foreground: "#6c2f3d", label: "陶土" },
+  { background: "#242a31", foreground: "#f3cf59", label: "石墨" },
+  { background: "#2446d8", foreground: "#f7f2df", label: "钴蓝" },
+  { background: "#ed7d31", foreground: "#fff8ed", label: "柑橘" },
+  { background: "#d8f56a", foreground: "#1e3329", label: "青柠" },
+  { background: "#ddd4ff", foreground: "#45307a", label: "淡紫" },
+  { background: "#6e315f", foreground: "#ffe0f0", label: "梅子" },
+  { background: "#d8f3f0", foreground: "#0b5960", label: "冰川" },
+  { background: "#718355", foreground: "#fff5d6", label: "苔藓" },
+  { background: "#971f3f", foreground: "#fff0f2", label: "樱桃" },
+  { background: "#2f5d8c", foreground: "#f9e8a8", label: "牛仔" },
+  { background: "#f4b183", foreground: "#4a2d27", label: "杏色" },
 ];
 const previewSizes = [16, 32, 48, 128] as const;
+const DRAFT_KEY = "tiny-icons-draft-v1";
 const DEFAULT_MARK_SCALE = 125;
 const DEFAULT_QUAD_MARGIN = 18;
 const DEFAULT_QUAD_SPACING = 0;
@@ -907,10 +908,6 @@ function download(data: Uint8Array, filename: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-function statusForSize() {
-  return { label: "清晰", tone: "good" };
-}
-
 function GeometryControls({
   icon,
   onUpdate,
@@ -963,6 +960,39 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isComposingLetter, setIsComposingLetter] = useState(false);
   const [activeQuadSlot, setActiveQuadSlot] = useState(0);
+  const draftLoaded = useRef(false);
+
+  // 草稿自动保存在当前浏览器本地，刷新后恢复；不上传服务器。
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<IconState>;
+        if (!saved.iconName || saved.iconName in iconLibrary) {
+          setIcon((current) => ({
+            ...current,
+            ...saved,
+            quadSlots: Array.isArray(saved.quadSlots) && saved.quadSlots.length === 4
+              ? (saved.quadSlots as QuadSlot[])
+              : current.quadSlots,
+          }));
+          setNotice("已恢复上次的草稿");
+        }
+      }
+    } catch {
+      // 本地草稿损坏时忽略，从默认方案开始。
+    }
+    draftLoaded.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!draftLoaded.current) return;
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(icon));
+    } catch {
+      // 本地存储不可用时忽略，当前页面仍可正常使用。
+    }
+  }, [icon]);
 
   const selected = useMemo(
     () => templates.find((template) => template.id === selectedTemplate) ?? templates[0],
@@ -1078,9 +1108,8 @@ export default function Home() {
         </div>
         <div className="topbar-center">ICON / 001</div>
         <div className="topbar-actions">
-          <span className="draft-status"><i /> 本地草稿</span>
-          <a className="repo-link" href="https://github.com/holynova/tiny-icons" target="_blank" rel="noreferrer">GitHub Repo</a>
-          <button className="text-button" type="button" onClick={() => setNotice("所有修改会保留在当前设备")}>保存说明</button>
+          <span className="draft-status"><i /> 已保存在本地</span>
+          <a className="repo-link" href="https://github.com/holynova/tiny-icons" target="_blank" rel="noreferrer">GitHub 仓库</a>
           <button className="top-export" type="button" onClick={exportPack}>导出图标包 <span>↗</span></button>
         </div>
       </header>
@@ -1088,8 +1117,8 @@ export default function Home() {
       <div className="workspace">
         <aside className="left-rail">
           <div className="rail-heading">
-            <span>CREATE</span>
-            <span className="rail-count">{mode === "templates" ? "04" : "AI"}</span>
+            <span>开始</span>
+            <span className="rail-count">{mode === "templates" ? "4 个模板" : "AI"}</span>
           </div>
           <div className="mode-tabs" role="tablist" aria-label="创作方式">
             <button className={mode === "templates" ? "mode-tab active" : "mode-tab"} type="button" onClick={() => setMode("templates")} role="tab" aria-selected={mode === "templates"}>
@@ -1104,7 +1133,7 @@ export default function Home() {
 
           {mode === "templates" ? (
             <div className="template-list">
-              <div className="section-label">START WITH A TEMPLATE</div>
+              <div className="section-label">从模板开始</div>
               {templates.map((template) => (
                 <button
                   key={template.id}
@@ -1122,7 +1151,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="ai-panel">
-              <div className="section-label">DESCRIBE YOUR ICON</div>
+              <div className="section-label">描述你想要的图标</div>
               <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} aria-label="描述你想要的图标" />
               <div className="prompt-hints">
                 <button type="button" onClick={() => setPrompt("一个蓝色的浏览器工具图标")}>蓝色工具</button>
@@ -1130,27 +1159,27 @@ export default function Home() {
                 <button type="button" onClick={() => setPrompt("一个安静的笔记图标")}>安静笔记</button>
               </div>
               <button className="generate-button" type="button" onClick={generateConcept} disabled={isGenerating}>
-                {isGenerating ? "生成中…" : "生成 3 个草案"}<span>✦</span>
+                {isGenerating ? "生成中…" : "生成草案"}<span>✦</span>
               </button>
-              <p className="ai-note">AI 只负责给出清晰的图形方向，生成后仍可在右侧编辑。</p>
+              <p className="ai-note">按描述里的关键词选一个接近的模板，生成后仍可继续调整。</p>
             </div>
           )}
 
           <div className="rail-footnote">
             <span className="footnote-number">02</span>
-            <p>每一个方案都会先经过 16px 检查，再进入导出。</p>
+            <p>导出前先看 16 像素预览，确认小尺寸下依然清晰。</p>
           </div>
         </aside>
 
         <section className="canvas-column" aria-label="图标编辑区">
           <div className="canvas-intro">
             <div>
-              <p className="eyebrow">MASTER CANVAS / 128 PX</p>
+              <p className="eyebrow">主画布 / 128 像素</p>
               <h1>Make it tiny<span>.</span></h1>
-              <p className="intro-copy">图形和字母共用一套光学尺寸，先看 16px，再看 128px。</p>
+              <p className="intro-copy">先看 16 像素小图，再看 128 像素大图，确认都清晰再导出。</p>
             </div>
             <div className="target-switcher" aria-label="导出目标">
-              <span>OUTPUT</span>
+              <span>导出目标</span>
               <button className={exportTarget === "chrome" ? "active" : ""} type="button" onClick={() => setExportTarget("chrome")}>Chrome</button>
               <button className={exportTarget === "favicon" ? "active" : ""} type="button" onClick={() => setExportTarget("favicon")}>Favicon</button>
             </div>
@@ -1165,16 +1194,16 @@ export default function Home() {
               <span className="safe-zone safe-zone-top" />
               <span className="safe-zone safe-zone-bottom" />
             </div>
-            <span className="stage-tag stage-tag-top">safe area / 96 px</span>
-            <span className="stage-tag stage-tag-bottom">{selected.name.toUpperCase()} / EDITABLE</span>
+            <span className="stage-tag stage-tag-top">安全区 / 96 像素</span>
+            <span className="stage-tag stage-tag-bottom">{selected.name} / 可编辑</span>
           </div>
 
           <div className="controls-panel">
-            <div className="controls-header"><span>EDIT MARK</span><span>{notice}</span></div>
+            <div className="controls-header"><span>编辑图标</span><span>{notice}</span></div>
             <div className="controls-grid">
               {isQuadLayout(icon.layout) ? (
                 <div className="control-field quad-field">
-                  <span>4 ELEMENTS / 四位置</span>
+                  <span>4 个位置</span>
                   <div className="quad-slot-list">
                     {icon.quadSlots.map((slot, index) => (
                       <div className={`quad-slot-card ${activeQuadSlot === index ? "active" : ""} ${slot.enabled ? "" : "disabled"}`} key={`slot-${index}`}>
@@ -1203,14 +1232,14 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <label className="control-field text-field"><span>LETTER / 汉字</span><input value={icon.letter} lang="zh-CN" inputMode="text" placeholder="A / 字" aria-label="字母或汉字" onCompositionStart={() => setIsComposingLetter(true)} onCompositionEnd={(event) => { setIsComposingLetter(false); updateIcon({ letter: normalizeLetter(event.currentTarget.value) }); }} onChange={(event) => { const value = event.target.value; updateIcon({ letter: isComposingLetter || event.nativeEvent.isComposing ? value : normalizeLetter(value) }); }} /></label>
+                <label className="control-field text-field"><span>字母 / 汉字</span><input value={icon.letter} lang="zh-CN" inputMode="text" placeholder="A / 字" aria-label="字母或汉字" onCompositionStart={() => setIsComposingLetter(true)} onCompositionEnd={(event) => { setIsComposingLetter(false); updateIcon({ letter: normalizeLetter(event.currentTarget.value) }); }} onChange={(event) => { const value = event.target.value; updateIcon({ letter: isComposingLetter || event.nativeEvent.isComposing ? value : normalizeLetter(value) }); }} /></label>
               )}
               <GeometryControls icon={icon} onUpdate={updateIcon} />
-              <div className="control-field icon-field"><span>ICON LIBRARY{isQuadLayout(icon.layout) ? ` / POSITION ${String(activeQuadSlot + 1).padStart(2, "0")}` : ""}</span><div className="icon-options">{iconNames.map((name) => <button key={name} type="button" className={(isQuadLayout(icon.layout) ? currentQuadSlot?.kind === "icon" && currentQuadSlot.iconName === name : icon.iconName === name) ? "selected" : ""} onClick={() => selectIcon(name)} aria-label={iconLabels[name]} title={iconLabels[name]}><IconGlyph name={name} /></button>)}</div></div>
-              <div className="control-field layout-field"><span>LAYOUT</span><div className="layout-options">{layoutOptions.map((option) => <button key={option.id} type="button" className={icon.layout === option.id ? "selected" : ""} onClick={() => updateIcon({ layout: option.id })} aria-label={option.label} title={option.label}><span className={`layout-sample sample-${option.id}`}><i /><b />{isQuadLayout(option.id) ? <><em /><strong /></> : null}</span></button>)}</div></div>
-              <div className="control-field font-field"><span>TYPE</span><div className="font-options">{fontOptions.map((font) => <button key={font.id} type="button" className={icon.fontKey === font.id ? "selected" : ""} onClick={() => updateIcon({ fontKey: font.id })} style={{ "--font-sample": fontFamilyFor(font.id) } as CSSProperties} aria-label={font.label} title={font.label}><span>{font.sample}</span></button>)}</div></div>
+              <div className="control-field icon-field"><span>图标库（46 个）{isQuadLayout(icon.layout) ? ` / 位置 ${String(activeQuadSlot + 1).padStart(2, "0")}` : ""}</span><div className="icon-options">{iconNames.map((name) => <button key={name} type="button" className={(isQuadLayout(icon.layout) ? currentQuadSlot?.kind === "icon" && currentQuadSlot.iconName === name : icon.iconName === name) ? "selected" : ""} onClick={() => selectIcon(name)} aria-label={iconLabels[name]} title={iconLabels[name]}><IconGlyph name={name} /></button>)}</div></div>
+              <div className="control-field layout-field"><span>布局</span><div className="layout-options">{layoutOptions.map((option) => <button key={option.id} type="button" className={icon.layout === option.id ? "selected" : ""} onClick={() => updateIcon({ layout: option.id })} aria-label={option.label} title={option.label}><span className={`layout-sample sample-${option.id}`}><i /><b />{isQuadLayout(option.id) ? <><em /><strong /></> : null}</span></button>)}</div></div>
+              <div className="control-field font-field"><span>字体</span><div className="font-options">{fontOptions.map((font) => <button key={font.id} type="button" className={icon.fontKey === font.id ? "selected" : ""} onClick={() => updateIcon({ fontKey: font.id })} style={{ "--font-sample": fontFamilyFor(font.id) } as CSSProperties} aria-label={font.label} title={font.label}><span>{font.sample}</span></button>)}</div></div>
               <div className="control-field scale-field">
-                <span>SIZE</span>
+                <span>大小</span>
                 <div className="scale-controls">
                   <label className="scale-control">
                     <span>图形 <output>{icon.iconScale}%</output></span>
@@ -1223,7 +1252,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="control-field text-style-field">
-                <span>TEXT EFFECTS</span>
+                <span>文字效果</span>
                 <div className="text-effects">
                   <div className="effect-group shadow-effect-group">
                     <span>阴影</span>
@@ -1234,30 +1263,28 @@ export default function Home() {
                   <label className="offset-control"><span>旋转 <output>{icon.letterRotation > 0 ? `+${icon.letterRotation}` : icon.letterRotation}°</output></span><input type="range" min={ROTATION_MIN} max={ROTATION_MAX} step="1" value={icon.letterRotation} disabled={!icon.letter} onChange={(event) => updateIcon({ letterRotation: Number(event.target.value) })} aria-label="文字旋转" /></label>
                 </div>
               </div>
-              <div className="control-field"><span>SHAPE</span><div className="shape-options">{(["circle", "rounded", "square"] as Shape[]).map((shape) => <button key={shape} className={`shape-control shape-control-${shape} ${icon.shape === shape ? "selected" : ""}`} type="button" onClick={() => updateIcon({ shape })} aria-label={shape} />)}</div></div>
-              <div className="control-field"><span>PALETTE</span><div className="color-options">{colorOptions.map((color) => <button key={color.label} className={icon.background === color.background ? "selected" : ""} type="button" style={{ "--swatch-bg": color.background, "--swatch-fg": color.foreground } as CSSProperties} onClick={() => updateIcon({ background: color.background, foreground: color.foreground })} aria-label={color.label} />)}</div></div>
+              <div className="control-field"><span>形状</span><div className="shape-options">{([["circle", "圆形"], ["rounded", "圆角方形"], ["square", "方形"]] as Array<[Shape, string]>).map(([shape, label]) => <button key={shape} className={`shape-control shape-control-${shape} ${icon.shape === shape ? "selected" : ""}`} type="button" onClick={() => updateIcon({ shape })} aria-label={label} title={label} />)}</div></div>
+              <div className="control-field"><span>配色</span><div className="color-options">{colorOptions.map((color) => <button key={color.label} className={icon.background === color.background ? "selected" : ""} type="button" style={{ "--swatch-bg": color.background, "--swatch-fg": color.foreground } as CSSProperties} onClick={() => updateIcon({ background: color.background, foreground: color.foreground })} aria-label={color.label} title={color.label} />)}</div></div>
             </div>
           </div>
         </section>
 
         <aside className="right-rail">
-          <div className="preview-heading"><div><span className="eyebrow">SIZE CHECK</span><h2>Still clear?</h2></div><span className={`pass-badge ${icon.letter.length > 1 ? "has-warning" : ""}`}>{icon.letter.length > 1 ? "PASS / 03 + WARN / 01" : "PASS / 04"}</span></div>
+          <div className="preview-heading"><div><span className="eyebrow">尺寸检查</span><h2>还清晰吗？</h2></div><span className="pass-badge">4 个尺寸</span></div>
           <div className="preview-list">
             {previewSizes.map((size) => {
-              const status = statusForSize();
               return <div className="preview-row" key={size}>
                 <div className={`preview-art preview-art-${size}`}><IconArtwork icon={icon} size="small" /></div>
-                <div className="preview-meta"><strong>{size}<small>×</small>{size}</strong><span>{size === 128 ? "Chrome store" : size === 16 ? "Toolbar / tab" : "Browser UI"}</span></div>
-                <span className={`preview-status ${status.tone}`}><i />{status.label}</span>
+                <div className="preview-meta"><strong>{size}<small>×</small>{size}</strong><span>{size === 128 ? "Chrome 应用店" : size === 16 ? "工具栏 / 标签页" : "浏览器界面"}</span></div>
               </div>;
             })}
           </div>
-          <div className="preview-tip"><span>TIP / 16 PX</span><p>{icon.letter ? "图形与字母共享同一组视觉尺寸，16px 下仍保持清晰。" : "单一图形保持完整轮廓，16px 下不需要额外简化。"}</p></div>
-          <div className="download-card"><div className="download-card-top"><span className="download-icon">↓</span><div><span>READY TO USE</span><strong>{exportTarget === "chrome" ? "Chrome icon pack" : "Favicon pack"}</strong></div></div><button type="button" onClick={exportPack}>下载 .ZIP <span>↗</span></button><small>含 PNG、SVG 与可编辑 spec</small></div>
+          <div className="preview-tip"><span>16 像素提示</span><p>{icon.letter ? "图形与字母共享同一组视觉尺寸，16px 下仍保持清晰。" : "单一图形保持完整轮廓，16px 下不需要额外简化。"}</p></div>
+          <div className="download-card"><div className="download-card-top"><span className="download-icon">↓</span><div><span>可以直接用</span><strong>{exportTarget === "chrome" ? "Chrome 图标包" : "网站图标包"}</strong></div></div><button type="button" onClick={exportPack}>下载 ZIP 包 <span>↗</span></button><small>{exportTarget === "chrome" ? "7 个文件：4 张 PNG、SVG、清单片段与配置" : "6 个文件：3 张 PNG、ICO、SVG 与配置"}</small></div>
         </aside>
       </div>
 
-      <footer className="bottombar"><span><i /> NO ACCOUNT NEEDED</span><span>LOCAL DRAFTS ONLY</span><span>DESIGNED FOR 16 PX</span></footer>
+      <footer className="bottombar"><span><i /> 不用注册</span><span>草稿只存本地</span><span>为 16 像素设计</span></footer>
     </main>
   );
 }
