@@ -1,6 +1,6 @@
 {
   "name": "tiny-icons",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A focused icon maker for Chrome extensions and favicons.",
   "private": true,
   "license": "MIT",
