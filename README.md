@@ -1,24 +1,24 @@
+<p align="right"><a href="README.en.md">English</a></p>
+
 <p align="center">
   <img src="./assets/readme/hero.svg" width="100%" alt="Tiny Icons — 小图标生成器：深蓝 128px 主画布上的薄荷绿终端符号，旁边是 16/32/48/128 四档尺寸检查">
 </p>
 
 <p align="center">
-  <a href="https://tiny-icons.xiaosang.cc/">▶ 在线制作 Make Icons</a>
+  <a href="https://tiny-icons.xiaosang.cc/">▶ 在线制作</a>
   ·
   <a href="https://github.com/holynova/tiny-icons">GitHub 仓库</a>
 </p>
 
 Tiny Icons 是一款小图标生成器，专为 Chrome 扩展与网站 Favicon 设计：从 46 个 Lucide 开源图标、4 个模板出发，调配色、字体与排版，在 128px 主画布上编辑，16px 下先过清晰度检查，再一键导出完整图标包。全程本地生成，无需账号。
 
-Tiny Icons is a focused icon maker for Chrome extensions and favicons: start from 46 open-source Lucide icons and 4 templates, tune colors, fonts and layout on a 128px master canvas, pass the 16px clarity check first, then export the full icon pack in one click. Everything is generated locally; no account needed.
-
-## 截图 / Screenshots
+## 截图
 
 <p align="center">
   <img src="./assets/readme/screenshot-app.png" width="800" alt="主界面：左侧模板列表（Terminal / Magic / Chevron / Focus），中间 128px 主画布上的 Terminal 图标，右侧 16/32/48/128 四档尺寸检查全部清晰">
 </p>
 
-## 功能 / Features
+## 功能
 
 - **46 个 Lucide 图标**：终端、火箭、盾牌、眼睛、星标等开源图标，图形与字母共用一套光学尺寸。
 - **4 个模板**：Terminal（深蓝终端）、Magic（粉色火花 + 字母）、Chevron（红色折线）、Focus（紧凑徽章），一键应用。
@@ -29,7 +29,7 @@ Tiny Icons is a focused icon maker for Chrome extensions and favicons: start fro
 - **16px 清晰度检查**：每个方案先过 16 / 32 / 48 / 128 四档预览，16px 下仍清晰才进入导出。
 - **本地草稿**：方案只存本地，无账号、无上传。
 
-## 导出 / Export
+## 导出
 
 一键下载 ZIP 图标包，全部在浏览器内生成（手写 ZIP 与 ICO 编码，无第三方库）：
 
@@ -38,7 +38,7 @@ Tiny Icons is a focused icon maker for Chrome extensions and favicons: start fro
 | Chrome 扩展 | `icon16.png` / `icon32.png` / `icon48.png` / `icon128.png` + `manifest-snippet.json` + `icon.svg` + `icon-spec.json` |
 | Favicon | `icon16.png` / `icon32.png` / `icon48.png` + `favicon.ico` + `icon.svg` + `icon-spec.json` |
 
-## 本地运行 / Run Locally
+## 本地运行
 
 ```bash
 pnpm install
@@ -50,7 +50,7 @@ pnpm lint
 pnpm test      # 构建 + 渲染 HTML 测试
 ```
 
-## 技术 / Tech
+## 技术
 
 - Next.js 16 + React 19 + Tailwind CSS 4；图标来自 Lucide，字体来自 Fontsource（Plus Jakarta / Space Grotesk / IBM Plex）。
 - 导出全在客户端完成：Canvas 渲染 PNG、手写 ICO 文件头、手写 ZIP 打包；`icon-spec.json` 保存完整方案参数，可复现。
@@ -64,18 +64,3 @@ tests/              渲染 HTML 测试
 scripts/            GitHub Pages 构建脚本
 docs/               预构建静态站（Pages 发布用）
 ```
-
-## English
-
-**Tiny Icons** is a focused icon maker for Chrome extensions and favicons. Start from 46 open-source Lucide icons and 4 templates, tune colors, fonts and layout on a 128px master canvas, and export the full icon pack in one click — generated entirely in the browser, no account, no uploads.
-
-- **46 Lucide icons**, 4 templates (Terminal / Magic / Chevron / Focus), 15 layouts, 4 fonts, 20 color pairings; letters support CJK characters.
-- **AI draft**: type one sentence and get a template matched by local keyword rules — no network call.
-- **16px clarity check**: every design is previewed at 16 / 32 / 48 / 128px first; it must stay clear at 16px before export.
-- **Export**: a ZIP pack — PNGs (Chrome: 16/32/48/128; Favicon: 16/32/48) plus `favicon.ico` (Favicon) or `manifest-snippet.json` (Chrome), `icon.svg` and `icon-spec.json`. ZIP and ICO are encoded by hand-rolled code.
-- **Run it**: `pnpm install && pnpm dev`. Tests: `pnpm test` (build + rendered-HTML tests).
-- **Tech**: Next.js 16 + React 19 + Tailwind CSS 4, Lucide icons, Fontsource fonts.
-
-## 许可 / License
-
-MIT（见 `package.json`）。
